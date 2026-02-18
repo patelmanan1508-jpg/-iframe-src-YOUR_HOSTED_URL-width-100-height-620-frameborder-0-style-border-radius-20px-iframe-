@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XBB System — FAQ Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f3ef;
+    --surface: #ffffff;
+    --border: #e2ddd6;
+    --accent: #e85d04;
+    --accent-dark: #c44c00;
+    --accent-light: #fff0e8;
+    --text: #1a1614;
+    --muted: #7a7067;
+    --bot-bg: #f9f7f4;
+    --user-bg: #e85d04;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background-image: radial-gradient(circle at 80% 20%, rgba(232,93,4,0.07) 0%, transparent 50%),
+                      radial-gradient(circle at 10% 80%, rgba(232,93,4,0.04) 0%, transparent 40%);
+  }
+
+  .wrapper {
+    width: 100%;
+    max-width: 700px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    animation: fadeDown 0.5s ease both;
+  }
+
+  .logo-mark {
+    width: 48px;
+    height: 48px;
+    background: var(--accent);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    color: white;
+    flex-shrink: 0;
+    box-shadow: 0 4px 14px rgba(232,93,4,0.3);
+  }
+
+  .header-text h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .header-text p {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 2px;
+    font-weight: 300;
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    background: #22c55e;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+    animation: pulse 2s infinite;
+  }
+
+  /* Chat container */
+  .chat-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
+    animation: fadeUp 0.6s ease both 0.1s;
+  }
+
+  /* Messages area */
+  .messages {
+    height: 440px;
+    overflow-y: auto;
+    padding: 24px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    scroll-behavior: smooth;
+  }
+
+  .messages::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar-track { background: transparent; }
+  .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .message {
+    display: flex;
+    gap: 10px;
+    animation: msgIn 0.3s ease both;
+  }
+
+  .message.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: 'Syne', sans-serif;
+  }
+
+  .bot-avatar {
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 2px 8px rgba(232,93,4,0.25);
+  }
+
+  .user-avatar {
+    background: #e8e3db;
+    color: var(--muted);
+  }
+
+  .bubble {
+    max-width: 78%;
+    padding: 12px 16px;
+    border-radius: 14px;
+    font-size: 14px;
+    line-height: 1.65;
+    font-weight: 400;
+  }
+
+  .bot .bubble {
+    background: var(--bot-bg);
+    border: 1px solid var(--border);
+    border-top-left-radius: 4px;
+    color: var(--text);
+  }
+
+  .user .bubble {
+    background: var(--user-bg);
+    border-top-right-radius: 4px;
+    color: white;
+    font-weight: 300;
+  }
+
+  /* Typing indicator */
+  .dots {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    padding: 4px 2px;
+  }
+
+  .dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: bounce 1.2s infinite;
+  }
+
+  .dots span:nth-child(2) { animation-delay: 0.2s; }
+  .dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  /* Suggestions */
+  .suggestions {
+    padding: 4px 22px 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  .suggestion-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    width: 100%;
+    margin-bottom: 2px;
+  }
+
+  .suggestion-btn {
+    background: var(--accent-light);
+    border: 1px solid rgba(232,93,4,0.2);
+    color: var(--accent-dark);
+    font-family: 'Inter', sans-serif;
+    font-size: 12.5px;
+    padding: 6px 13px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 400;
+  }
+
+  .suggestion-btn:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(232,93,4,0.25);
+  }
+
+  /* Input area */
+  .input-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    border-top: 1px solid var(--border);
+    background: #fafaf8;
+  }
+
+  .input-area input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    outline: none;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    transition: border-color 0.2s;
+  }
+
+  .input-area input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(232,93,4,0.1);
+  }
+
+  .input-area input::placeholder { color: #bbb; }
+
+  .send-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--accent);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(232,93,4,0.3);
+  }
+
+  .send-btn:hover { background: var(--accent-dark); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(232,93,4,0.4); }
+  .send-btn:active { transform: translateY(0); }
+  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .send-btn svg { width: 16px; height: 16px; fill: white; }
+
+  /* Footer */
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    animation: fadeUp 0.6s ease both 0.2s;
+  }
+
+  .footer-left {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .footer-left a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .footer-right {
+    font-size: 12px;
+    color: #bbb;
+  }
+
+  /* Embed section */
+  .embed-section {
+    margin-top: 20px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 22px;
+    animation: fadeUp 0.6s ease both 0.3s;
+  }
+
+  .embed-section h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .embed-section p {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .embed-section code {
+    display: block;
+    background: #f5f3ef;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--accent-dark);
+    margin-top: 10px;
+    word-break: break-all;
+    font-family: monospace;
+  }
+
+  /* Animations */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-5px); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+  <div class="header">
+    <div class="logo-mark">XBB</div>
+    <div class="header-text">
+      <h1>XBB System Support</h1>
+      <p id="car-status"><span class="status-dot"></span>AI assistant · Loading car database…</p>
+    </div>
+  </div>
+
+  <div class="chat-box">
+    <div class="messages" id="messages"></div>
+
+    <div class="suggestions" id="suggestions">
+      <div class="suggestion-label">Popular questions</div>
+      <button class="suggestion-btn" onclick="askSuggestion(this)">Is my car compatible with XBB?</button>
+      <button class="suggestion-btn" onclick="askSuggestion(this)">Does XBB work with my car?</button>
+      <button class="suggestion-btn" onclick="askSuggestion(this)">XBB PowerUnit not found in app</button>
+      <button class="suggestion-btn" onclick="askSuggestion(this)">Battery drain issue</button>
+      <button class="suggestion-btn" onclick="askSuggestion(this)">How to update firmware?</button>
+      <button class="suggestion-btn" onclick="askSuggestion(this)">Tesla Model 3 / Y setup</button>
+      <button class="suggestion-btn" onclick="askSuggestion(this)">LED bar turns off after 10 seconds</button>
+    </div>
+
+    <div class="input-area">
+      <input type="text" id="userInput" placeholder="Ask about XBB Dongle, PowerUnit, installation..." onkeydown="if(event.key==='Enter') sendMessage()" />
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 21l21-9L2 3v7l15 2-15 2z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-left">Powered by <a href="https://claude.ai" target="_blank">Claude AI</a> · Content from <a href="https://www.xbb.se/en/faq/" target="_blank">xbb.se/faq</a></div>
+    <div class="footer-right">© Innoware Development AB</div>
+  </div>
+
+  <div class="embed-section">
+    <h3>🔗 Embed on your website</h3>
+    <p>Host this file for free on <strong>Netlify</strong>, <strong>Vercel</strong>, or <strong>GitHub Pages</strong>, then embed it anywhere with:</p>
+    <code>&lt;iframe src="YOUR_HOSTED_URL" width="100%" height="620" frameborder="0" style="border-radius:20px"&gt;&lt;/iframe&gt;</code>
+  </div>
+</div>
+
+<script>
+const SYSTEM_PROMPT = `You are a helpful support assistant for XBB System (by Innoware Development AB), a Swedish company that makes the XBB Dongle® and XBB PowerUnit® — a wireless CAN-bus system that lets car owners control auxiliary LED lights and light bars by reading signals from the car's OBD2 diagnostic port via Bluetooth.
+
+Answer questions based ONLY on the following official FAQ content from xbb.se. Be concise, friendly, and technically accurate. If a question is not covered in the FAQ, say so and direct them to the official support at https://www.xbb.se/en/help/. Do not use markdown formatting — plain text only.
+
+=== XBB FAQ CONTENT ===
+
+COMPATIBILITY:
+- The XBB Dongle generally does not work on cars older than 2010.
+- If your car is not on the recipe list, you must test with an XBB Dongle + XBB Configurator app to see if signals display correctly.
+- It may work on similar car platforms (e.g. VW Group MQB/MLB). Check Wikipedia for your car's platform.
+- New recipes are continuously created, prioritizing popular cars first.
+- To create a recipe for your specific car, XBB needs physical access (~2 hours). You can book an appointment in Sala via the "Compatible Cars" menu on their website.
+
+BATTERY DRAIN:
+- Battery drain can happen if the selected recipe is not compatible with your car.
+- After installation, lock your car and check the app: the SYSTEM_ACTIVE signal must turn RED (OFF/sleep mode) within 2 minutes of locking. If it doesn't, try a different recipe.
+- Battery drain can also occur if your car has a BMS sensor on the battery and you connected directly to the battery terminals. The BMS won't detect the new power consumers. Fix: connect after the BMS sensor — positive to car fuses, negative to chassis ground point.
+
+XBB POWERUNIT NOT FOUND IN APP:
+- Reason 1: Wrong wiring. The negative (-) cable must go to pin 6 (GND) on the PowerUnit. When holding the PowerUnit with logo facing you, the left pin is GND.
+- Reason 2: If it previously worked but disappeared — after a firmware update, the PowerUnit and recipe are removed and must be re-added in the app. You may also need to manually update PowerUnit firmware. If still not found, the PowerUnit may be water damaged (not mounted upright) or you simply missed adding it in the app.
+
+POWERUNIT OVERLOADED / LED BAR TURNS OFF AFTER 10 SECONDS:
+- This means the lighting draws more current than the PowerUnit supports: Output 1 = 15 Amps max, Output 2 = 5 Amps max.
+- Calculate current: Watts ÷ Voltage = Amps. E.g. 250W ÷ 12.7V ≈ 19.7A, which exceeds 15A.
+- Solution: Use an extra power relay connected to your lighting, activated by the XBB PowerUnit. See wiring guide at xbb.se.
+
+XBB DONGLE NOT FOUND IN APP:
+- If more than 10 minutes have passed since closing the app, the Dongle goes invisible. Unplug and replug it from the OBD2 port.
+- To keep it always visible: tap the top-left Main Menu → "Pair with phone."
+- Make sure Location settings are enabled on your phone.
+
+FIRMWARE UPDATE:
+- XBB Dongle: Main Menu (top-left ≡) → "Update Firmware." App will check current version and offer upgrade.
+- XBB PowerUnit: First unplug the XBB Dongle from the diagnostic port, then go to Main Menu → "Update Firmware" → select your PowerUnit.
+- After updating the Dongle firmware, you MUST re-select the recipe and re-add the PowerUnit (all settings are reset).
+
+DELAY WHEN ACTIVATING LIGHTS:
+- The delay is NOT from Bluetooth communication (BLE latency is ~7.5ms max).
+- Main cause: the car's headlight activation process (e.g. Volvo's "enhanced high beams" cause ~100ms delay), plus some LED bars have built-in startup delay (~100-150ms).
+- XBB signal processing adds max ~17.5ms. Total typical delay: ~25ms. This is normal.
+
+XBB DONGLE GOES INTO STANDBY / NEED TO RESTART:
+- The Dongle has an accelerometer to detect car movement and wake from standby.
+- If the car door closing or engine start is too gentle to wake it, just drive the car — vibrations will wake it.
+- Or tap the XBB Dongle lightly with your hand.
+
+TESLA:
+- Tesla Model 3/Y (early 2023 and before): Connect between front seats, under rear seat ventilation unit — need a splitter cable for the blue connector.
+- Tesla Model 3/Y (Q3 2023 and later): Blue connector is on the right side of the center console near the driver's leg — need a splitter cable.
+- XBB does not sell the Tesla splitter cable. Find it at Tesla forums or resellers.
+- Tesla Model S/X (2012–2021): Requires a SPECIAL Tesla Dongle (red package, NOT the standard blue one). The OBD2 port uses different CAN pins.
+- Tesla Model S/X (other years): Use standard XBB Dongle.
+- Tesla does not provide the standard CAN-bus data via the OBD2 port.
+
+MERCEDES (newer MRA2 platform — E/C/GLC 2021 onwards, W214/W206/X254):
+- Cannot use the standard OBD2 diagnostic port — Mercedes no longer uses CAN-bus through it.
+- Solution: Use an XBB Dongle with an Adapter Cable, OR use the PP-CAN-FD product.
+- Requires: XBB Dongle hardware version 2 (sold since June 2024, shows "XBB-Dongle-2" in app settings > About XBB Dongle), plus technical knowledge.
+
+LED BAR / AUXILIARY LIGHTS ALWAYS ON:
+- You likely swapped the battery cable and lighting cable. The positive (+) must go to pin 2 on the PowerUnit.
+
+LED BAR SOMETIMES FLASHES:
+- Delete and reinstall the recipe. Check if a newer recipe version is available for your car.
+
+LIGHTS STOPPED WORKING AFTER CAR SERVICE:
+- The mechanic likely removed the XBB Dongle to read error codes and forgot to put it back. Reinsert the Dongle.
+- Car software updates by the workshop can also affect compatibility. Try updating to the latest recipe. If that doesn't help, contact XBB support.
+
+VOLTAGE READING ON OUTPUTS (12V when off):
+- This is normal and intentional — it allows the PowerUnit to detect short circuits on the outputs.
+
+PIXEL PHONE BLUETOOTH ISSUE:
+- "Wrong PIN / Incorrect passkey" on Pixel phones is a known Google bug, not an XBB issue. It works fine on other Android phones and iPhone.
+
+DOES THE PHONE NEED TO STAY IN THE CAR?
+- No. Phone is only needed during setup, recipe changes, or firmware updates.
+
+DOES THE XBB DONGLE NEED TO STAY IN THE OBD2 PORT?
+- Yes, always. It continuously reads car signals (headlights, ignition, etc.) to control the PowerUnit.
+
+ANOTHER DEVICE IN THE OBD2 PORT?
+- Use a Y-splitter cable. Note: XBB cannot guarantee compatibility with other OBD2 devices — must be tested.
+
+LED MATRIX / AUTO DIMMING COMPATIBILITY:
+- Yes, works if the recipe is developed for adaptive high beam.
+- Warning: Very powerful LED bars may reflect road signs, causing the car to auto-dim and turn off your auxiliary lights.
+
+ERROR CODES AFTER INSTALLATION:
+- Usually caused by disconnecting the car battery during installation. Error codes typically clear after driving a few km.
+- Also possible if you connected directly to the battery negative terminal (bypassing BMS).
+
+HOW TO ADD XBB SMART BUTTON:
+- First add an XBB PowerUnit in the app. Then go to the PowerUnit tab → tap the + button → "Add XBB Button" → follow instructions. Configure single/double press actions in settings.
+
+TURNING OFF THE LED BAR (e.g. in snow):
+- Option 1: Use an XBB Smart Button to manually toggle outputs.
+- Option 2: Remove the XBB Dongle from the OBD2 port (turn off ignition first). Reinserting restores function after a few seconds.
+
+HOW TO CONNECT POWERUNIT TO CAR POWER:
+- Connect directly to car battery if possible, but AFTER the BMS current sensor, not between the BMS and battery terminal.
+- If unsure, connect positive to the car's fuse box and negative to chassis ground.
+
+VOLVO OBD2 PORT FITTING ISSUE:
+- Volvo's diagnostic port has a tighter fit. XBB Dongles manufactured after May 1, 2022 have a better-fitting connector. Older units may be hard to insert but do work.
+
+DON'T KNOW YOUR HEADLIGHT TYPE?
+- Contact your brand workshop, or visit https://www.car.info/ to look it up.
+
+SIGNAL MEANINGS IN APP:
+- HIGHBEAM: green = high beam active
+- LOWBEAM: green = low beam active
+- REVERSELIGHT: green = reverse light active
+- IGNITION: green = ignition on
+- SYSTEM_ACTIVE: green = system active; MUST turn red ~2 min after locking car (if not, wrong recipe — risk of battery drain)
+- LOW_BATT: green/flickering = low battery, outputs won't activate — charge battery or start car
+- VOLTAGE: shows battery voltage (e.g. value 127 = 12.7V)
+
+USEFUL LINKS:
+- Installation manual: https://www.xbb.se/en/snabbguide/
+- Installation video: https://youtu.be/KBsbvsVQm0s
+- Wiring guide: https://www.xbb.se/en/kopplingsexempel/
+- Support form: https://www.xbb.se/en/help/
+- Compatible cars: https://www.xbb.se/en/compatible-cars/
+
+=== END OF FAQ ===
+
+=== COMPATIBLE CAR MODELS ===
+{CAR_DATA}
+=== END OF COMPATIBLE CAR MODELS ===`;
+
+let history = [];
+let carDataLoaded = false;
+
+// Parse car table HTML into readable text
+function parseCarTable(html) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const rows = doc.querySelectorAll('tr');
+  if (!rows.length) return null;
+
+  const lines = [];
+  rows.forEach(row => {
+    const cells = row.querySelectorAll('td, th');
+    if (cells.length > 0) {
+      const rowText = Array.from(cells).map(c => c.textContent.trim()).filter(Boolean).join(' | ');
+      if (rowText) lines.push(rowText);
+    }
+  });
+  return lines.length > 1 ? lines.join('\n') : null;
+}
+
+// Fetch live car compatibility data from XBB's website
+async function loadCarData() {
+  const statusEl = document.getElementById('car-status');
+  try {
+    // Use a CORS proxy to fetch the page
+    const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent('https://www.xbb.se/xbbTable/bilmodeller.php');
+    const res = await fetch(proxyUrl);
+    const json = await res.json();
+    const html = json.contents;
+
+    const parsed = parseCarTable(html);
+    if (parsed) {
+      SYSTEM_PROMPT = SYSTEM_PROMPT.replace('{CAR_DATA}', parsed);
+      carDataLoaded = true;
+      if (statusEl) {
+        statusEl.innerHTML = '<span class="status-dot"></span>Online · Car database loaded ✓';
+      }
+      return true;
+    }
+
+    // Fallback: extract all text content
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const text = doc.body ? doc.body.innerText || doc.body.textContent : '';
+    if (text && text.length > 100) {
+      SYSTEM_PROMPT = SYSTEM_PROMPT.replace('{CAR_DATA}', text.substring(0, 8000));
+      carDataLoaded = true;
+      if (statusEl) {
+        statusEl.innerHTML = '<span class="status-dot"></span>Online · Car database loaded ✓';
+      }
+      return true;
+    }
+  } catch(e) {
+    // silent fail
+  }
+
+  // If fetch failed, replace placeholder with fallback note
+  SYSTEM_PROMPT = SYSTEM_PROMPT.replace('{CAR_DATA}', 
+    'The live car compatibility database could not be loaded. Direct users to https://www.xbb.se/en/compatible-cars/ to check compatibility. Generally: works on most cars from 2010 onwards. Cars older than 2010 are generally not supported.');
+  if (statusEl) {
+    statusEl.innerHTML = '<span style="color:#f59e0b">⚠</span> Car database unavailable — <a href="https://www.xbb.se/en/compatible-cars/" target="_blank">check xbb.se</a>';
+  }
+  return false;
+}
+
+function addMessage(role, text) {
+  const messages = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = `message ${role}`;
+  div.innerHTML = `
+    <div class="avatar ${role}-avatar">${role === 'bot' ? 'XBB' : 'You'}</div>
+    <div class="bubble">${text.replace(/\n/g, '<br>')}</div>
+  `;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function addTyping() {
+  const messages = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'message bot';
+  div.id = 'typing';
+  div.innerHTML = `
+    <div class="avatar bot-avatar">XBB</div>
+    <div class="bubble"><div class="dots"><span></span><span></span><span></span></div></div>
+  `;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing');
+  if (t) t.remove();
+}
+
+function hideSuggestions() {
+  const s = document.getElementById('suggestions');
+  if (s) s.style.display = 'none';
+}
+
+function askSuggestion(btn) {
+  document.getElementById('userInput').value = btn.textContent;
+  hideSuggestions();
+  sendMessage();
+}
+
+async function sendMessage() {
+  const input = document.getElementById('userInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const text = input.value.trim();
+  if (!text) return;
+
+  hideSuggestions();
+  addMessage('user', text);
+  input.value = '';
+  sendBtn.disabled = true;
+
+  history.push({ role: 'user', content: text });
+  addTyping();
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: history
+      })
+    });
+
+    const data = await response.json();
+    removeTyping();
+
+    const reply = data.content?.[0]?.text || "I'm sorry, I couldn't process that. Please try again or visit https://www.xbb.se/en/help/ for direct support.";
+    history.push({ role: 'assistant', content: reply });
+    addMessage('bot', reply);
+  } catch (err) {
+    removeTyping();
+    addMessage('bot', "Connection error. Please try again, or contact XBB support directly at xbb.se/en/help/");
+  }
+
+  sendBtn.disabled = false;
+  input.focus();
+}
+
+window.onload = async () => {
+  // Load car data in background while showing welcome message
+  loadCarData();
+
+  setTimeout(() => {
+    addMessage('bot', "Hi! 👋 I'm the XBB System support assistant. I can help you with:\n\n• Compatible car models\n• XBB Dongle & PowerUnit installation\n• Troubleshooting & firmware updates\n• Tesla, Mercedes & special setups\n\nWhat can I help you with today?");
+  }, 400);
+};
+</script>
+</body>
+</html>
