@@ -169,6 +169,27 @@
   .footer-left a { color: var(--accent); text-decoration: none; font-weight: 500; }
   .footer-right { font-size: 12px; color: #bbb; }
 
+  .car-search-box { margin-top: 10px; }
+  .car-search-box input {
+    width: 100%; padding: 9px 13px;
+    border: 1px solid var(--border); border-radius: 8px;
+    font-family: 'Inter', sans-serif; font-size: 13px;
+    outline: none; background: white; color: var(--text);
+    transition: border-color 0.2s;
+  }
+  .car-search-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,93,4,0.1); }
+  .car-results { margin-top: 8px; max-height: 180px; overflow-y: auto; }
+  .car-results::-webkit-scrollbar { width: 3px; }
+  .car-results::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .car-result-item {
+    padding: 6px 10px; font-size: 13px; border-radius: 6px;
+    border-bottom: 1px solid #f0ede8; color: var(--text); line-height: 1.4;
+  }
+  .car-result-item:last-child { border-bottom: none; }
+  .car-result-item.match { background: var(--accent-light); color: var(--accent-dark); font-weight: 500; }
+  .car-no-result { font-size: 13px; color: var(--muted); padding: 6px 2px; }
+  .car-loading { font-size: 13px; color: var(--muted); padding: 6px 2px; }
+
   @keyframes fadeDown { from { opacity:0; transform:translateY(-14px); } to { opacity:1; transform:translateY(0); } }
   @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
   @keyframes msgIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
@@ -219,8 +240,8 @@
 // ── FAQ KNOWLEDGE BASE ─────────────────────────────────────────────────────
 const FAQ = [
   {
-    keywords: ['compatible', 'work with my car', 'my car', 'car model', 'which car', 'what car', 'support my', 'recipe list', 'does it work'],
-    answer: `The XBB Dongle generally works on cars made after 2010. Here's how to check:\n\n• If your car is on the recipe list in the app — you're good to go!\n• If not listed, you can still test it. Download the XBB Configurator app, connect the Dongle and see if the signals appear correctly.\n• Similar car platforms (e.g. VW MQB/MLB) may share recipes.\n• Cars older than 2010 are generally NOT supported.\n\nNot sure? Use the 14-day return policy to test risk-free.\n\n🔗 <a href="https://www.xbb.se/en/compatible-cars/" target="_blank">Check compatible cars →</a>`
+    keywords: ['compatible', 'work with my car', 'my car', 'car model', 'which car', 'what car', 'support my', 'recipe list', 'does it work', 'supported cars', 'list of cars'],
+    answer: `__CAR_SEARCH__`
   },
   {
     keywords: ['recipe', 'create recipe', 'new recipe', 'make recipe', 'book appointment', 'sala'],
@@ -328,7 +349,96 @@ const FAQ = [
   }
 ];
 
-// ── MATCHING ENGINE ───────────────────────────────────────────────────────────
+// ── LIVE RECIPE LIST ──────────────────────────────────────────────────────────
+let recipeList = [];
+let recipeLoaded = false;
+
+async function loadRecipes() {
+  try {
+    // Try fetching via CORS proxy
+    const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent('https://recipelist.innowareapi.com/');
+    const res = await fetch(proxyUrl);
+    const json = await res.json();
+    const html = json.contents;
+
+    // Parse all text content that looks like car names
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+
+    // Try table rows first
+    const rows = doc.querySelectorAll('tr, li, .recipe, .car, [class*="car"], [class*="model"]');
+    const items = new Set();
+
+    rows.forEach(row => {
+      const text = row.textContent.trim();
+      if (text.length > 3 && text.length < 120 && !text.includes('{') && !text.includes('function')) {
+        items.add(text);
+      }
+    });
+
+    // Also grab all text nodes that look like car names
+    const allText = doc.body ? doc.body.innerText || doc.body.textContent : '';
+    const lines = allText.split('\n').map(l => l.trim()).filter(l =>
+      l.length > 3 && l.length < 100 &&
+      !l.includes('{') && !l.includes('function') && !l.includes('var ') &&
+      !l.includes('http') && !l.startsWith('//')
+    );
+    lines.forEach(l => items.add(l));
+
+    recipeList = [...items].filter(Boolean);
+    recipeLoaded = recipeList.length > 5;
+  } catch(e) {
+    recipeLoaded = false;
+  }
+}
+
+function renderCarSearch() {
+  const id = 'car-search-' + Date.now();
+  const resultsId = 'car-results-' + Date.now();
+
+  setTimeout(() => {
+    const input = document.getElementById(id);
+    const results = document.getElementById(resultsId);
+    if (!input || !results) return;
+
+    input.addEventListener('input', () => {
+      const q = input.value.trim().toLowerCase();
+      results.innerHTML = '';
+      if (!q) return;
+
+      if (!recipeLoaded) {
+        results.innerHTML = `<div class="car-no-result">⚠️ Car list not loaded. <a href="https://recipelist.innowareapi.com/" target="_blank">Check full list →</a></div>`;
+        return;
+      }
+
+      const matches = recipeList.filter(r => r.toLowerCase().includes(q));
+      if (matches.length === 0) {
+        results.innerHTML = `<div class="car-no-result">No matches found for "<strong>${input.value}</strong>".<br>Try a different spelling or <a href="https://recipelist.innowareapi.com/" target="_blank">browse the full list →</a></div>`;
+      } else {
+        matches.slice(0, 20).forEach(m => {
+          const div = document.createElement('div');
+          div.className = 'car-result-item match';
+          div.textContent = '✅ ' + m;
+          results.appendChild(div);
+        });
+        if (matches.length > 20) {
+          const more = document.createElement('div');
+          more.className = 'car-result-item';
+          more.innerHTML = `...and ${matches.length - 20} more. <a href="https://recipelist.innowareapi.com/" target="_blank">See full list →</a>`;
+          results.appendChild(more);
+        }
+      }
+    });
+  }, 100);
+
+  const loadingMsg = recipeLoaded
+    ? `Type your car brand or model to search ${recipeList.length} supported recipes:`
+    : `Loading car list... (or <a href="https://recipelist.innowareapi.com/" target="_blank">browse full list →</a>)`;
+
+  return `The XBB Dongle works on most cars made after 2010. Search below to check if your car is supported:\n\n<div class="car-search-box"><div class="car-loading">${loadingMsg}</div><input id="${id}" type="text" placeholder="e.g. Volvo, BMW, Volkswagen..." /><div class="car-results" id="${resultsId}"></div></div>\n\n• Cars older than 2010 are generally NOT supported.\n• If your car isn't listed, test with the 14-day return policy.\n🔗 <a href="https://recipelist.innowareapi.com/" target="_blank">Browse full recipe list →</a>`;
+}
+
+
 function findAnswer(query) {
   const q = query.toLowerCase();
   let bestMatch = null;
@@ -347,9 +457,18 @@ function findAnswer(query) {
     }
   }
 
-  if (bestScore > 0) return bestMatch.answer;
+  if (bestScore > 0) {
+    if (bestMatch.answer === '__CAR_SEARCH__') return renderCarSearch();
+    return bestMatch.answer;
+  }
 
-  return `I'm not sure about that specific question. Here are some helpful resources:\n\n🔧 <a href="https://www.xbb.se/en/help/" target="_blank">XBB Support Form →</a>\n❓ <a href="https://www.xbb.se/en/faq/" target="_blank">Full FAQ on xbb.se →</a>\n📖 <a href="https://www.xbb.se/en/snabbguide/" target="_blank">Installation Manual →</a>\n\nTry rephrasing — I cover: compatibility, battery drain, firmware updates, PowerUnit setup, Tesla/Mercedes, and more.`;
+  // Also trigger car search if user mentions a car brand
+  const carBrands = ['volvo','bmw','volkswagen','vw','audi','mercedes','ford','toyota','honda','hyundai','kia','seat','skoda','opel','peugeot','citroen','renault','nissan','mazda','subaru','jeep','land rover','porsche','fiat','alfa','lexus','mitsubishi','suzuki'];
+  for (const brand of carBrands) {
+    if (q.includes(brand)) return renderCarSearch();
+  }
+
+  return `I'm not sure about that specific question. Here are some helpful resources:\n\n🔧 <a href="https://www.xbb.se/en/help/" target="_blank">XBB Support Form →</a>\n❓ <a href="https://www.xbb.se/en/faq/" target="_blank">Full FAQ on xbb.se →</a>\n📖 <a href="https://www.xbb.se/en/snabbguide/" target="_blank">Installation Manual →</a>\n🚗 <a href="https://recipelist.innowareapi.com/" target="_blank">Compatible car list →</a>\n\nTry rephrasing — I cover: compatibility, battery drain, firmware updates, PowerUnit setup, Tesla/Mercedes, and more.`;
 }
 
 // ── CHAT UI ───────────────────────────────────────────────────────────────────
@@ -399,6 +518,7 @@ function sendMessage() {
 }
 
 window.onload = () => {
+  loadRecipes(); // fetch live recipe list in background
   setTimeout(() => {
     addMessage('bot', `Hi! 👋 I'm the XBB System FAQ assistant. I can help you with:\n\n• Compatible car models\n• XBB Dongle & PowerUnit installation\n• Troubleshooting & firmware updates\n• Tesla, Mercedes & special setups\n\nWhat can I help you with today?`);
   }, 400);
